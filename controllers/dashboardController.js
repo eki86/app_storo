@@ -12,7 +12,7 @@ exports.getKPI = async (req, res) => {
     const stores = await getStores(store_id);
     if (!stores.length) return res.json({ kpi: emptyKPI() });
 
-    let totalRevenue = 0, totalOrders = 0, totalRefunds = 0;
+    let totalRevenue = 0, totalOrders = 0, totalRefunds = 0, shopifyError = null;
 
     for (const store of stores) {
       try {
@@ -44,7 +44,9 @@ exports.getKPI = async (req, res) => {
           }
         }
       } catch (e) {
-  console.error('Shopify fetch error za store', store.id, e.message, e.response?.status, JSON.stringify(e.response?.data));
+  const errDetail = e.message + ' | HTTP:' + (e.response?.status||'?') + ' | ' + JSON.stringify(e.response?.data||{});
+  console.error('Shopify fetch error za store', store.id, errDetail);
+  shopifyError = errDetail;
 }
     }
 
@@ -67,6 +69,7 @@ exports.getKPI = async (req, res) => {
         profit: profit,
         orders: totalOrders,
         refunds: totalRefunds,
+        shopify_error: shopifyError,
         period,
         from,
         to
