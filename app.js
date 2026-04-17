@@ -50,7 +50,6 @@ app.use("/api/settings",  require("./routes/settings"));
 app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/orders",    require("./routes/orders"));
 app.use("/api/finansije", require("./routes/finansije"));
-app.use("/api/creatives", require("./routes/creatives"));
 
 app.get("*", (req, res) => {
   if (req.path === "/login.html") {
