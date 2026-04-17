@@ -42,6 +42,7 @@ function navigate(pageId) {
   if (pageId === 'finansije') loadFinansije();
   if (pageId === 'narudzbine') loadNarudzbine();
   if (pageId === 'proizvodi') loadProizvodi();
+  if (pageId === 'kreative') { if (window.loadKreative) loadKreative(); }
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -144,6 +145,7 @@ window.loadDashboard  = window.loadDashboard  || function(){};
 window.loadFinansije  = window.loadFinansije  || function(){};
 window.loadNarudzbine = window.loadNarudzbine || function(){};
 window.loadProizvodi  = window.loadProizvodi  || function(){};
+window.loadKreative   = window.loadKreative   || function(){};
 
 // ─── Init ────────────────────────────────────────────────────
 (async function init() {

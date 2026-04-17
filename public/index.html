@@ -143,7 +143,6 @@
     <div class="page" id="page-izvestaji"><div class="empty-state"><h3>Izveštaji</h3><p>U izradi...</p></div></div>
 
     <!-- KREATIVE -->
-    <div class="page" id="page-kreative"><div class="empty-state"><h3>Kreative</h3><p>U izradi...</p></div></div>
 
     <!-- SKALIRANJE -->
     <div class="page" id="page-skaliranje"><div class="empty-state"><h3>Skaliranje</h3><p>U izradi...</p></div></div>
@@ -172,6 +171,169 @@
         </div>
       </div>
     </div>
+
+    
+    <!-- KREATIVE -->
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE: KREATIVE — dodati u index.html unutar <main> ili <div id="pages">
+     ════════════════════════════════════════════════════════════ -->
+<div id="page-kreative" class="page">
+
+  <!-- Header bar -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <!-- Period dugmići -->
+      <div id="kreativePeriodBtns" class="period-btns">
+        <button class="period-btn" data-period="today">Danas</button>
+        <button class="period-btn active" data-period="7d">7 dana</button>
+        <button class="period-btn" data-period="30d">30 dana</button>
+        <button class="period-btn" data-period="mtd">Ovaj mesec</button>
+        <button class="period-btn" data-period="custom">Od–Do</button>
+      </div>
+      <!-- Custom date (pojavljuje se samo kad je custom) -->
+      <div id="kreativeCustomDate" class="custom-date-row" style="display:none">
+        <input type="date" id="kreativeFromDate" class="date-input">
+        <span>—</span>
+        <input type="date" id="kreativeToDate" class="date-input">
+        <button id="kreativeApplyDate" class="btn-apply">Primeni</button>
+      </div>
+    </div>
+
+    <!-- Meta dugovanje -->
+    <div class="dugovanje-badge">
+      <span class="dugovanje-label">Meta dugovanje:</span>
+      <span id="metaDugovanje" class="dugovanje-val">—</span>
+    </div>
+  </div>
+
+  <!-- Period label -->
+  <div class="period-info-bar">
+    <span id="kreativePeriodLabel" class="period-label-text"></span>
+  </div>
+
+  <!-- Greška / Loading -->
+  <div id="kreativeError"   class="error-bar"  style="display:none"></div>
+  <div id="kreativeLoading" class="loading-bar" style="display:none">
+    <span class="spinner"></span> Učitavam Meta Ads podatke…
+  </div>
+
+  <!-- Search + Status filter -->
+  <div class="table-controls">
+    <input type="text" id="kreativeSearch" class="search-input" placeholder="🔍 Pretraži naziv, SKU…">
+    <div id="kreativeStatusFilter" class="filter-btns">
+      <button class="filter-btn active" data-status="all">Sve</button>
+      <button class="filter-btn" data-status="ACTIVE">Aktivne</button>
+      <button class="filter-btn" data-status="PAUSED">Pauzirane</button>
+    </div>
+  </div>
+
+  <!-- Tabela kreativa -->
+  <div class="table-wrapper">
+    <table id="kreativeTable" class="data-table">
+      <thead>
+        <tr>
+          <th data-sort="name">Naziv kreative</th>
+          <th data-sort="status">Status</th>
+          <th data-sort="spend" class="sort-desc">Spend</th>
+          <th data-sort="roas">ROAS</th>
+          <th data-sort="ctr">CTR</th>
+          <th data-sort="frequency">Freq.</th>
+          <th data-sort="impressions">Impr.</th>
+          <th data-sort="purchases">Purchase</th>
+          <th data-sort="add_to_cart">Add to Cart</th>
+          <th data-sort="dana_aktivan">Dana aktiv.</th>
+          <th>Akcije</th>
+        </tr>
+      </thead>
+      <tbody id="kreativeTableBody">
+        <tr><td colspan="11" class="empty-cell">Učitavam…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Grafikoni -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3 class="chart-title">ROAS po kreativi</h3>
+      <canvas id="chartROASKreative" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Spend po kreativi (USD)</h3>
+      <canvas id="chartSpendKreative" height="220"></canvas>
+    </div>
+  </div>
+
+</div><!-- /#page-kreative -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL: Promeni budžet
+     ════════════════════════════════════════════════════════════ -->
+<div id="budgetModal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Promeni budžet</h2>
+      <button class="modal-close" aria-label="Zatvori">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="budgetAdsetId">
+      <input type="hidden" id="budgetStoreId">
+
+      <div class="form-row">
+        <label>Trenutni budžet</label>
+        <span id="budgetCurrentVal" class="val-display">—</span>
+      </div>
+      <div class="form-row">
+        <label>Novi iznos <span id="budgetTypeLabel" class="label-muted">(dnevni budžet)</span></label>
+        <input type="number" id="budgetAmount" class="form-input" placeholder="npr. 15.00" step="0.01" min="0">
+      </div>
+      <div class="form-row">
+        <label>Napomena</label>
+        <input type="text" id="budgetNote" class="form-input" placeholder="Opciono">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Otkaži</button>
+      <button class="btn btn-primary" id="budgetSaveBtn">Sačuvaj budžet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODAL: Skaliranje budžeta
+     ════════════════════════════════════════════════════════════ -->
+<div id="scaleModal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Skaliraj budžet</h2>
+      <button class="modal-close" aria-label="Zatvori">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="scaleAdsetId">
+      <input type="hidden" id="scaleStoreId">
+
+      <div class="form-row">
+        <label>Procenat skaliranja</label>
+        <div class="input-with-unit">
+          <input type="number" id="scalePercent" class="form-input" value="20" min="-90" max="500" step="5">
+          <span class="unit">%</span>
+        </div>
+        <small class="hint">Pozitivna vrednost = povećanje. Negativna = smanjenje.</small>
+      </div>
+      <div class="form-row">
+        <label>Napomena</label>
+        <input type="text" id="scaleNote" class="form-input" placeholder="Opciono">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Otkaži</button>
+      <button class="btn btn-primary" id="scaleSaveBtn">Skaliraj</button>
+    </div>
+  </div>
+</div>
+
 
     <!-- NARUDŽBINE -->
     <div class="page" id="page-narudzbine">
@@ -390,5 +552,7 @@
 <script src="/js/isporuceni.js"></script>
 <script src="/js/povrati.js"></script>
 <script src="/js/proizvodi.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/js/kreative.js"></script>
 </body>
 </html>
