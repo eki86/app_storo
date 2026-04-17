@@ -21,7 +21,7 @@ exports.getKPI = async (req, res) => {
 
         // Narudžbine
         const ordersResp = await axios.get(
-          `https://${store.shopify_url}/admin/api/2024-01/orders.json`,
+          `https://${store.shopify_url}/admin/api/2025-01/orders.json`,
           {
             headers: { 'X-Shopify-Access-Token': token },
             params: {
@@ -106,7 +106,7 @@ exports.getChart = async (req, res) => {
           if (page_info) params.page_info = page_info;
 
           const resp = await axios.get(
-            `https://${store.shopify_url}/admin/api/2024-01/orders.json`,
+            `https://${store.shopify_url}/admin/api/2025-01/orders.json`,
             { headers: { 'X-Shopify-Access-Token': token }, params }
           );
 

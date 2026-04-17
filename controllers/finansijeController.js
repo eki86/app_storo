@@ -42,7 +42,7 @@ exports.getSummary = async (req, res) => {
       const token = await getShopifyToken(store);
       if (!token) continue;
 
-      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2024-01/orders.json`, {
+      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2025-01/orders.json`, {
         headers: { 'X-Shopify-Access-Token': token },
         params: {
           status: 'any',
@@ -117,7 +117,7 @@ exports.getProductsFinancials = async (req, res) => {
       const token = await getShopifyToken(store);
       if (!token) continue;
 
-      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2024-01/orders.json`, {
+      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2025-01/orders.json`, {
         headers: { 'X-Shopify-Access-Token': token },
         params: { status: 'any', created_at_min: from, created_at_max: to, limit: 250, fields: 'id,line_items,financial_status' }
       });

@@ -68,7 +68,7 @@ exports.testShopify = async (req, res) => {
     const token = await getShopifyToken(store);
     if (!token) return res.status(400).json({ error: 'Nema tokena. Unesi Client ID i Secret.' });
 
-    const resp = await axios.get(`https://${store.shopify_url}/admin/api/2024-01/shop.json`, {
+    const resp = await axios.get(`https://${store.shopify_url}/admin/api/2025-01/shop.json`, {
       headers: { 'X-Shopify-Access-Token': token }
     });
 
