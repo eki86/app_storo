@@ -44,8 +44,8 @@ exports.getKPI = async (req, res) => {
           }
         }
       } catch (e) {
-        console.error('Shopify fetch error za store', store.id, e.message);
-      }
+  console.error('Shopify fetch error za store', store.id, e.message, e.response?.status, JSON.stringify(e.response?.data));
+}
     }
 
     // Meta spend iz baze (ako je upisano)
