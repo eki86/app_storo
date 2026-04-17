@@ -104,26 +104,56 @@ exports.refreshToken = async (req, res) => {
 };
 
 async function getShopifyToken(store) {
-  if (store.shopify_access_token) return store.shopify_access_token;
-  if (!store.shopify_client_id || !store.shopify_client_secret) return null;
-
-  try {
-    const resp = await axios.post(
-      `https://${store.shopify_url}/admin/oauth/access_token`,
-      {
-        client_id:     store.shopify_client_id,
-        client_secret: store.shopify_client_secret,
-        grant_type:    'client_credentials'
+  // Uvijek pokušaj refresh ako ima client_id i client_secret
+  // Token ističe za 24h, pa ga uvijek osvježavamo
+  if (store.shopify_client_id && store.shopify_client_secret) {
+    try {
+      const resp = await axios.post(
+        `https://${store.shopify_url}/admin/oauth/access_token`,
+        {
+          client_id:     store.shopify_client_id,
+          client_secret: store.shopify_client_secret,
+          grant_type:    'client_credentials'
+        }
+      );
+      const token = resp.data.access_token;
+      if (token) {
+        await db.query(
+          "UPDATE stores SET shopify_access_token=?, shopify_token_status='connected', shopify_token_expires=DATE_ADD(NOW(), INTERVAL 23 HOUR) WHERE id=?",
+          [token, store.id]
+        );
+        return token;
       }
-    );
-    const token = resp.data.access_token;
-    if (token) {
-      await db.query('UPDATE stores SET shopify_access_token=? WHERE id=?', [token, store.id]);
+    } catch(e) {
+      console.error('OAuth refresh greška za store', store.id, e.response?.data || e.message);
+      // Ako refresh ne uspije, pokušaj sa starim tokenom
+      if (store.shopify_access_token) return store.shopify_access_token;
+      return null;
     }
-    return token;
-  } catch(e) {
-    return null;
   }
+
+  // Nema client credentials — vrati stari token ako postoji
+  if (store.shopify_access_token) return store.shopify_access_token;
+  return null;
 }
+
+
+// Direktno upisivanje access tokena (za slučaj ručnog unosa)
+exports.saveToken = async (req, res) => {
+  const { shopify_access_token, shopify_client_id, shopify_client_secret } = req.body;
+  try {
+    const updates = [];
+    const values  = [];
+    if (shopify_access_token)  { updates.push('shopify_access_token = ?');  values.push(shopify_access_token); }
+    if (shopify_client_id)     { updates.push('shopify_client_id = ?');     values.push(shopify_client_id); }
+    if (shopify_client_secret) { updates.push('shopify_client_secret = ?'); values.push(shopify_client_secret); }
+    if (!updates.length) return res.status(400).json({ error: 'Nema podataka za upis' });
+    values.push(req.params.id);
+    await db.query(`UPDATE stores SET ${updates.join(', ')} WHERE id = ?`, values);
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+};
 
 module.exports.getShopifyToken = getShopifyToken;

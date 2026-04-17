@@ -8,5 +8,6 @@ router.post('/stores', auth, ctrl.saveStore);
 router.delete('/stores/:id', auth, ctrl.deleteStore);
 router.post('/stores/:id/test-shopify', auth, ctrl.testShopify);
 router.post('/stores/:id/refresh-token', auth, ctrl.refreshToken);
+router.post('/stores/:id/token', auth, ctrl.saveToken);
 
 module.exports = router;
