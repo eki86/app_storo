@@ -58,11 +58,32 @@ function editStore(id) {
   document.getElementById('storeId').value = store.id;
   document.getElementById('storeName').value = store.name || '';
   document.getElementById('storeUrl').value = store.shopify_url || '';
-  // Tokeni se NAMERNO ostavljaju prazni — ne šalju se ako nisu uneti ponovo
-  document.getElementById('storeClientId').value = '';
-  document.getElementById('storeClientSecret').value = '';
-  document.getElementById('metaToken').value = '';
-  document.getElementById('metaAccountId').value = store.meta_ad_account_id || '';
+
+  // Client ID je vidljiv — popuni ako postoji
+  const clientIdEl = document.getElementById('storeClientId');
+  clientIdEl.value = store.shopify_client_id || '';
+  clientIdEl.type = 'text';
+  clientIdEl.placeholder = store.shopify_client_id
+    ? store.shopify_client_id
+    : 'npr. 87101155ede889d77cb14e7d44f41188';
+
+  // Client Secret — asteriksi, placeholder ako postoji
+  const clientSecretEl = document.getElementById('storeClientSecret');
+  clientSecretEl.value = '';
+  clientSecretEl.type = 'password';
+  clientSecretEl.placeholder = store.has_shopify_token ? '••••••••  (ostavite prazno da ne menjate)' : 'shpss_...';
+
+  // Meta Token — asteriksi, placeholder ako postoji
+  const metaTokenEl = document.getElementById('metaToken');
+  metaTokenEl.value = '';
+  metaTokenEl.type = 'password';
+  metaTokenEl.placeholder = store.has_meta_token ? '••••••••  (ostavite prazno da ne menjate)' : 'EAAxxxxx...';
+
+  // Meta Account ID — vidljiv
+  const metaAccountEl = document.getElementById('metaAccountId');
+  metaAccountEl.value = store.meta_ad_account_id || '';
+  metaAccountEl.type = 'text';
+
   document.getElementById('storeFormCard').style.display = 'block';
   document.getElementById('storeFormCard').scrollIntoView({ behavior: 'smooth' });
 }
@@ -71,6 +92,16 @@ window.newStore = function() {
   document.getElementById('storeFormTitle').textContent = 'Nova prodavnica';
   document.getElementById('storeId').value = '';
   document.getElementById('storeForm').reset();
+
+  // Reset tipova polja i placeholdera za novu prodavnicu
+  document.getElementById('storeClientId').type = 'text';
+  document.getElementById('storeClientId').placeholder = 'npr. 87101155ede889d77cb14e7d44f41188';
+  document.getElementById('storeClientSecret').type = 'password';
+  document.getElementById('storeClientSecret').placeholder = 'shpss_...';
+  document.getElementById('metaToken').type = 'password';
+  document.getElementById('metaToken').placeholder = 'EAAxxxxx...';
+  document.getElementById('metaAccountId').type = 'text';
+
   document.getElementById('storeFormCard').style.display = 'block';
   document.getElementById('storeFormCard').scrollIntoView({ behavior: 'smooth' });
 };
@@ -125,7 +156,7 @@ function initSettingsForms() {
       meta_ad_account_id: document.getElementById('metaAccountId').value.trim()
     };
 
-    // Šalji token SAMO ako je korisnik uneo nešto novo — inače ostavi stari u bazi
+    // Šalji SAMO ako je korisnik uneo nešto novo — inače ostavi stari u bazi
     if (clientId)     body.shopify_client_id     = clientId;
     if (clientSecret) body.shopify_client_secret  = clientSecret;
     if (metaToken)    body.meta_access_token      = metaToken;

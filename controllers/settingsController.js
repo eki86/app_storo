@@ -4,7 +4,7 @@ const axios = require('axios');
 exports.getStores = async (req, res) => {
   try {
     const [stores] = await db.query(
-      `SELECT id, name, shopify_url, meta_ad_account_id,
+      `SELECT id, name, shopify_url, shopify_client_id, meta_ad_account_id,
               shopify_token_status, shopify_token_expires,
               CASE WHEN shopify_access_token IS NOT NULL AND shopify_access_token != '' THEN 1 ELSE 0 END as has_shopify_token,
               CASE WHEN meta_access_token IS NOT NULL AND meta_access_token != '' THEN 1 ELSE 0 END as has_meta_token
