@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="sr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdTrack</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/chart.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">Ad<span>Track</span></div>
+  <div class="sidebar-store">
+    <select class="store-select" id="storeSelect">
+      <option value="all">Sve prodavnice</option>
+    </select>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Analitika</div>
+    <a class="nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item" data-page="finansije">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Finansije
+    </a>
+    <a class="nav-item" data-page="cashflow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Cash Flow
+    </a>
+    <a class="nav-item" data-page="izvestaji">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Izveštaji
+    </a>
+    <div class="nav-section">Kampanje</div>
+    <a class="nav-item" data-page="kreative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      Kreative
+    </a>
+    <a class="nav-item" data-page="skaliranje">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Skaliranje
+    </a>
+    <a class="nav-item" data-page="akcije">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Istorija akcija
+    </a>
+    <div class="nav-section">Prodaja</div>
+    <a class="nav-item" data-page="proizvodi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+      Proizvodi
+    </a>
+    <a class="nav-item" data-page="narudzbine">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Narudžbine
+    </a>
+    <a class="nav-item" data-page="isporuceni">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Isporučeni
+    </a>
+    <a class="nav-item" data-page="bex">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      BEX Poštarina
+    </a>
+    <a class="nav-item" data-page="povrati">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+      Povrati
+    </a>
+    <div class="nav-section">Ostalo</div>
+    <a class="nav-item" data-page="licne">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Lične finansije
+    </a>
+    <a class="nav-item" data-page="podesavanja">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Podešavanja
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="theme-toggle" id="themeToggle">
+      <span id="themeIcon">☀️</span>
+      <span id="themeLabel">Light</span>
+    </button>
+    <button class="logout-btn" id="logoutBtn">Odjavi se</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div class="topbar-user">Ulogovan: <span id="usernameDisplay">admin</span></div>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="period-bar">
+        <select class="period-select" id="periodSelect">
+          <option value="today">Danas</option>
+          <option value="yesterday">Juče</option>
+          <option value="7d">Poslednjih 7 dana</option>
+          <option value="30d" selected>Poslednjih 30 dana</option>
+          <option value="mtd">Ovaj mesec</option>
+          <option value="last_month">Prošli mesec</option>
+        </select>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Ad Spend</div><div class="kpi-value" id="kpi-spend">—</div><div class="kpi-sub">Meta Ads trošak</div></div>
+        <div class="kpi-card"><div class="kpi-label">Prihod</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub">Shopify narudžbine</div></div>
+        <div class="kpi-card"><div class="kpi-label">ROAS</div><div class="kpi-value" id="kpi-roas">—</div><div class="kpi-sub">Prihod / Ad Spend</div></div>
+        <div class="kpi-card"><div class="kpi-label">Profit</div><div class="kpi-value" id="kpi-profit">—</div><div class="kpi-sub">Neto zarada</div></div>
+        <div class="kpi-card"><div class="kpi-label">Narudžbine</div><div class="kpi-value" id="kpi-orders">—</div><div class="kpi-sub">Ukupno</div></div>
+        <div class="kpi-card"><div class="kpi-label">Povrati</div><div class="kpi-value" id="kpi-refunds">—</div><div class="kpi-sub">Refunded</div></div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text2)">📈 Prihod po danima</div>
+        <div id="dashChartArea"><div style="height:220px;display:flex;align-items:center;justify-content:center;color:var(--text3)">Učitavam...</div></div>
+      </div>
+    </div>
+
+    <!-- FINANSIJE -->
+    <div class="page" id="page-finansije">
+      <div class="period-bar">
+        <select class="period-select" id="finansijePeriod">
+          <option value="today">Danas</option><option value="yesterday">Juče</option>
+          <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
+          <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
+        </select>
+      </div>
+      <div id="finansijeSummary"></div>
+      <div id="finansijeProducts" style="margin-top:16px"></div>
+    </div>
+
+    <!-- CASH FLOW -->
+    <div class="page" id="page-cashflow"><div class="empty-state"><h3>Cash Flow</h3><p>U izradi...</p></div></div>
+
+    <!-- IZVESTAJI -->
+    <div class="page" id="page-izvestaji"><div class="empty-state"><h3>Izveštaji</h3><p>U izradi...</p></div></div>
+
+    <!-- KREATIVE -->
+    <div class="page" id="page-kreative"><div class="empty-state"><h3>Kreative</h3><p>U izradi...</p></div></div>
+
+    <!-- SKALIRANJE -->
+    <div class="page" id="page-skaliranje"><div class="empty-state"><h3>Skaliranje</h3><p>U izradi...</p></div></div>
+
+    <!-- ISTORIJA AKCIJA -->
+    <div class="page" id="page-akcije"><div class="empty-state"><h3>Istorija akcija</h3><p>U izradi...</p></div></div>
+
+    <!-- PROIZVODI -->
+    <div class="page" id="page-proizvodi">
+      <div class="period-bar">
+        <select class="period-select" id="proizvodiPeriod">
+          <option value="today">Danas</option><option value="yesterday">Juče</option>
+          <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
+          <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
+        </select>
+      </div>
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px">📦 Prodaja po proizvodima</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Proizvod</th><th>Kom</th><th>Prihod</th><th>COGS ukupno</th><th>Akcija</th></tr></thead>
+            <tbody id="proizvodiTbody">
+              <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NARUDŽBINE -->
+    <div class="page" id="page-narudzbine">
+      <div class="period-bar">
+        <select class="period-select" id="narudzbinePeriod">
+          <option value="today">Danas</option><option value="yesterday">Juče</option>
+          <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
+          <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
+        </select>
+      </div>
+      <div class="kpi-grid" id="narudzbineStats" style="margin-bottom:20px"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Broj</th><th>Prodavnica</th><th>Datum</th><th>Kupac</th><th>Kom</th><th>Vrednost</th><th>Status</th><th>Isporuka</th></tr></thead>
+          <tbody id="narudzbineTbody">
+            <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ISPORUČENI -->
+    <div class="page" id="page-isporuceni">
+      <div class="period-bar">
+        <select class="period-select" id="isporuceniPeriod">
+          <option value="today">Danas</option><option value="yesterday">Juče</option>
+          <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
+          <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
+        </select>
+      </div>
+      <div class="kpi-grid" id="isporuceniStats" style="margin-bottom:20px"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Broj</th><th>Prodavnica</th><th>Datum</th><th>Kupac</th><th>Kom</th><th>Vrednost</th><th>Status</th></tr></thead>
+          <tbody id="isporuceniTbody">
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BEX -->
+    <div class="page" id="page-bex"><div class="empty-state"><h3>BEX Poštarina</h3><p>U izradi...</p></div></div>
+
+    <!-- POVRATI -->
+    <div class="page" id="page-povrati">
+      <div class="period-bar">
+        <select class="period-select" id="povratiPeriod">
+          <option value="today">Danas</option><option value="yesterday">Juče</option>
+          <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
+          <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
+        </select>
+      </div>
+      <div class="kpi-grid" id="povratiStats" style="margin-bottom:20px"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Broj</th><th>Prodavnica</th><th>Datum</th><th>Kupac</th><th>Vrednost</th><th>Tip</th></tr></thead>
+          <tbody id="povratiTbody">
+            <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LIČNE FINANSIJE -->
+    <div class="page" id="page-licne"><div class="empty-state"><h3>Lične finansije</h3><p>U izradi...</p></div></div>
+
+    <!-- PODEŠAVANJA -->
+    <div class="page" id="page-podesavanja">
+      <div class="settings-grid">
+        <div class="settings-nav">
+          <div class="settings-nav-item active" data-section="prodavnice">🏪 Prodavnice & API</div>
+          <div class="settings-nav-item" data-section="finansije">💰 Finansijski model</div>
+          <div class="settings-nav-item" data-section="kursevi">💱 Kursevi valuta</div>
+          <div class="settings-nav-item" data-section="bex">📦 BEX cene</div>
+          <div class="settings-nav-item" data-section="kategorije">📂 Kategorije</div>
+        </div>
+        <div>
+          <div class="settings-section active" id="settings-prodavnice">
+            <div class="settings-card">
+              <div class="settings-card-title">Prodavnice i API konekcije</div>
+              <div class="settings-card-desc">Podesi Shopify i Meta Ads za svaku prodavnicu.</div>
+              <div id="storeSettingsList"></div>
+              <button class="add-store-btn" onclick="newStore()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Dodaj prodavnicu
+              </button>
+            </div>
+            <div class="settings-card" id="storeFormCard" style="display:none">
+              <div class="settings-card-title" id="storeFormTitle">Nova prodavnica</div>
+              <hr class="divider">
+              <form id="storeForm">
+                <input type="hidden" id="storeId">
+                <div class="form-group">
+                  <label class="form-label">Naziv prodavnice</label>
+                  <input type="text" class="form-input" id="storeName" placeholder="npr. STORO Main" required>
+                </div>
+                <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:18px">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2)">🛍️ Shopify API</div>
+                  <div class="form-group">
+                    <label class="form-label">Shop URL</label>
+                    <input type="text" class="form-input" id="storeUrl" placeholder="storo-8003.myshopify.com">
+                    <div class="form-hint">Samo domen, bez https://</div>
+                  </div>
+                  <div class="row-2">
+                    <div class="form-group"><label class="form-label">Client ID</label><input type="text" class="form-input" id="storeClientId" placeholder="shp_xxxxx..."></div>
+                    <div class="form-group"><label class="form-label">Client Secret</label><input type="password" class="form-input" id="storeClientSecret" placeholder="••••••••••••"></div>
+                  </div>
+                  <div class="form-hint" style="margin-top:-10px">Dev Dashboard → tvoj app → Settings → Client credentials</div>
+                </div>
+                <div style="background:var(--bg3);border-radius:10px;padding:16px;margin-bottom:18px">
+                  <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text2)">📘 Meta Ads API</div>
+                  <div class="form-group">
+                    <label class="form-label">Access Token (System User)</label>
+                    <input type="password" class="form-input" id="metaToken" placeholder="EAAxxxxx...">
+                    <div class="form-hint">Meta Business Suite → System Users → token koji ne ističe</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Ad Account ID</label>
+                    <input type="text" class="form-input" id="metaAccountId" placeholder="act_123456789">
+                    <div class="form-hint">Počinje sa act_</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px">
+                  <button type="submit" class="btn btn-primary">Sačuvaj</button>
+                  <button type="button" class="btn btn-secondary" onclick="cancelStoreForm()">Otkaži</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="settings-section" id="settings-finansije">
+            <div class="settings-card">
+              <div class="settings-card-title">Finansijski model</div>
+              <div class="settings-card-desc">Podrazumevane vrednosti za kalkulaciju profita.</div>
+              <div class="row-2">
+                <div class="form-group"><label class="form-label">Breakeven ROAS</label><input type="number" class="form-input" placeholder="1.5" step="0.1"></div>
+                <div class="form-group"><label class="form-label">Ciljna marža (RSD)</label><input type="number" class="form-input" placeholder="700"></div>
+              </div>
+              <div class="row-2">
+                <div class="form-group"><label class="form-label">Max CPA (RSD)</label><input type="number" class="form-input" placeholder="500"></div>
+                <div class="form-group"><label class="form-label">Pakovanje default (RSD)</label><input type="number" class="form-input" placeholder="177"></div>
+              </div>
+              <button class="btn btn-primary">Sačuvaj</button>
+            </div>
+          </div>
+          <div class="settings-section" id="settings-kursevi">
+            <div class="settings-card">
+              <div class="settings-card-title">Istorija kurseva</div>
+              <div class="settings-card-desc">Za konverziju troškova iz USD/EUR u RSD.</div>
+              <div class="row-2" style="margin-bottom:12px">
+                <div class="form-group"><label class="form-label">USD → RSD</label><input type="number" class="form-input" placeholder="117.50" step="0.01"></div>
+                <div class="form-group"><label class="form-label">EUR → RSD</label><input type="number" class="form-input" placeholder="117.00" step="0.01"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Važi od datuma</label><input type="date" class="form-input"></div>
+              <button class="btn btn-primary" style="margin-bottom:20px">Dodaj kurs</button>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Valuta</th><th>Kurs</th><th>Važi od</th><th></th></tr></thead>
+                  <tbody id="rateHistoryBody"><tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Nema unesenih kurseva</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section" id="settings-bex">
+            <div class="settings-card">
+              <div class="settings-card-title">BEX Istorija cena</div>
+              <div class="settings-card-desc">PDV 20% se dodaje automatski.</div>
+              <div class="row-2" style="margin-bottom:12px">
+                <div class="form-group"><label class="form-label">Cena bez PDV (RSD)</label><input type="number" class="form-input" placeholder="250" step="1"></div>
+                <div class="form-group"><label class="form-label">Važi od datuma</label><input type="date" class="form-input"></div>
+              </div>
+              <button class="btn btn-primary" style="margin-bottom:20px">Dodaj cenu</button>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Cena (bez PDV)</th><th>Sa PDV (20%)</th><th>Važi od</th><th></th></tr></thead>
+                  <tbody><tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Nema unesenih cena</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="settings-section" id="settings-kategorije">
+            <div class="settings-card">
+              <div class="settings-card-title">Kategorije — Lične finansije</div>
+              <div class="settings-card-desc">Kategorije za praćenje ličnih prihoda i rashoda.</div>
+              <div style="display:flex;gap:10px;margin-bottom:16px">
+                <input type="text" class="form-input" placeholder="Naziv kategorije" style="flex:1">
+                <select class="form-input" style="width:160px">
+                  <option value="income">Prihod</option>
+                  <option value="expense">Rashod</option>
+                  <option value="both">Oba</option>
+                </select>
+                <button class="btn btn-primary">Dodaj</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Kategorija</th><th>Tip</th><th></th></tr></thead>
+                  <tbody><tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px">Nema kategorija</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/app.js"></script>
+<script src="/js/settings.js"></script>
+<script src="/js/dashboard.js"></script>
+<script src="/js/narudzbine.js"></script>
+<script src="/js/finansije.js"></script>
+<script src="/js/isporuceni.js"></script>
+<script src="/js/povrati.js"></script>
+<script src="/js/proizvodi.js"></script>
+</body>
+</html>
