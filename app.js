@@ -51,7 +51,6 @@ app.use("/api/dashboard", require("./routes/dashboard"));
 app.use("/api/orders",    require("./routes/orders"));
 app.use("/api/finansije", require("./routes/finansije"));
 app.use("/api/creatives", require("./routes/creatives"));
-app.use("/api/debug",    require("./routes/debug")); // PRIVREMENO — obriši nakon dijagnostike
 
 app.get("*", (req, res) => {
   if (req.path === "/login.html") {
