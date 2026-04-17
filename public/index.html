@@ -212,6 +212,7 @@
   </div>
 
   <!-- Greška / Loading -->
+  <div id="kreativeBreadcrumb" class="kreative-breadcrumb"></div>
   <div id="kreativeError"   class="error-bar"  style="display:none"></div>
   <div id="kreativeLoading" class="loading-bar" style="display:none">
     <span class="spinner"></span> Učitavam Meta Ads podatke…
@@ -219,6 +220,7 @@
 
   <!-- Search + Status filter -->
   <div class="table-controls">
+    <button onclick="(function(){window._kreativeDrillAdsets&&window._kreativeDrillAdsets();})()" id="btnAdsets" class="drill-back-btn" title="Prikaži po Ad Setovima">📦 Ad Setovi</button>
     <input type="text" id="kreativeSearch" class="search-input" placeholder="🔍 Pretraži naziv, SKU…">
     <div id="kreativeStatusFilter" class="filter-btns">
       <button class="filter-btn active" data-status="all">Sve</button>
