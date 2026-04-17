@@ -16,7 +16,7 @@ async function loadDashboard() {
 
   try {
     const [kpiRes, chartRes] = await Promise.all([
-      fetch(`/api/dashboard/kpis?store_id=${storeId}&period=${period}`),
+      fetch(`/api/dashboard/kpi?store_id=${storeId}&period=${period}`),
       fetch(`/api/dashboard/chart?store_id=${storeId}&period=${period}`)
     ]);
 
