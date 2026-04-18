@@ -528,3 +528,155 @@ tr:hover td { background: var(--bg3); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
 .empty-state svg { width: 48px; height: 48px; margin: 0 auto 16px; opacity: 0.3; }
 .empty-state h3 { font-size: 16px; color: var(--text2); margin-bottom: 8px; }
+
+
+/* ===== PROIZVODI ===== */
+.proizvodi-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.proizvodi-tabs { display:flex; gap:8px; margin:0 0 18px; flex-wrap:wrap; }
+.proizvodi-tab {
+  border:1px solid var(--border); background:var(--bg2); color:var(--text2); border-radius:10px;
+  padding:10px 14px; font-size:13px; font-weight:600; cursor:pointer;
+}
+.proizvodi-tab.active { background:var(--accent); color:#111827; border-color:var(--accent); }
+.proizvodi-pane { display:none; }
+.proizvodi-pane.active { display:block; }
+.section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.section-head.compact { margin-bottom:12px; }
+.section-title { font-size:15px; font-weight:700; color:var(--text); }
+.section-subtitle { font-size:12px; color:var(--text3); margin-top:4px; }
+.cell-title { max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.history-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; }
+.history-card { padding:18px; }
+.history-list { display:flex; flex-direction:column; gap:10px; }
+.history-item {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  border:1px solid var(--border); background:var(--bg3); border-radius:10px; padding:12px 14px;
+}
+.history-price { font-size:16px; font-weight:700; color:var(--text); }
+.history-meta { font-size:12px; color:var(--text3); margin-top:4px; }
+.history-delete {
+  width:32px; height:32px; border-radius:8px; border:1px solid rgba(239,68,68,0.2); color:#ef4444;
+  background:rgba(239,68,68,0.08); cursor:pointer; font-size:16px; line-height:1;
+}
+.btn-sm { padding:6px 10px; font-size:12px; }
+@media (max-width: 900px) {
+  .cell-title { max-width:160px; }
+  .history-grid { grid-template-columns:1fr; }
+}
+
+
+.proizvodi-summary-row {
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0,1fr));
+  gap:16px;
+  margin-bottom:18px;
+}
+.proizvodi-mini-card {
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+}
+.proizvodi-mini-label {
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:var(--text3);
+  margin-bottom:6px;
+}
+.proizvodi-mini-value {
+  font-size:18px;
+  font-weight:700;
+  color:var(--text);
+}
+.proizvodi-note {
+  font-size:12px;
+  color:var(--text3);
+  margin-top:10px;
+}
+.proizvodi-formula {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  flex-wrap:wrap;
+  font-size:12px;
+  color:var(--text2);
+  margin-top:6px;
+}
+.proizvodi-formula code {
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:4px 8px;
+  color:var(--text);
+}
+.table-muted {
+  color:var(--text3);
+  font-size:12px;
+}
+@media (max-width: 900px) {
+  .proizvodi-summary-row { grid-template-columns:1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .proizvodi-summary-row { grid-template-columns:1fr; }
+}
+
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 23, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1200;
+}
+.modal-card {
+  width: 100%;
+  max-width: 820px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.28);
+  padding: 22px;
+}
+.modal-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:18px;
+}
+.modal-close {
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--bg3);
+  color:var(--text);
+  cursor:pointer;
+}
+.modal-actions {
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:20px;
+}
+.check-card {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid var(--border);
+  background:var(--bg3);
+  border-radius:10px;
+  padding:12px 14px;
+  color:var(--text2);
+  font-size:13px;
+  margin-bottom:14px;
+}
+.proizvodi-modal .row-2 { align-items:stretch; }
+@media (max-width: 700px) {
+  .modal-card { padding:16px; }
+  .modal-actions { flex-direction:column-reverse; }
+}

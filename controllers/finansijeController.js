@@ -5,15 +5,14 @@ const { getShopifyToken } = require('./settingsController');
 function getDateRange(period) {
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
-  const fmt    = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T00:00:00`;
-  const fmtEnd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T23:59:59`;
-  if (period === 'today')      return { from: fmt(now), to: fmtEnd(now) };
-  if (period === 'yesterday')  { const y = new Date(now); y.setDate(y.getDate()-1); return { from: fmt(y), to: fmtEnd(y) }; }
-  if (period === '7d')         { const s = new Date(now); s.setDate(s.getDate()-6); return { from: fmt(s), to: fmtEnd(now) }; }
-  if (period === '30d')        { const s = new Date(now); s.setDate(s.getDate()-29); return { from: fmt(s), to: fmtEnd(now) }; }
-  if (period === 'mtd')        { return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmtEnd(now) }; }
-  if (period === 'last_month') { const s = new Date(now.getFullYear(), now.getMonth()-1, 1); const e = new Date(now.getFullYear(), now.getMonth(), 0); return { from: fmt(s), to: fmtEnd(e) }; }
-  return { from: fmt(now), to: fmtEnd(now) };
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  if (period === 'today') return { from: fmt(now), to: fmt(now) };
+  if (period === 'yesterday') { const y = new Date(now); y.setDate(y.getDate()-1); return { from: fmt(y), to: fmt(y) }; }
+  if (period === '7d') { const s = new Date(now); s.setDate(s.getDate()-6); return { from: fmt(s), to: fmt(now) }; }
+  if (period === '30d') { const s = new Date(now); s.setDate(s.getDate()-29); return { from: fmt(s), to: fmt(now) }; }
+  if (period === 'mtd') return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmt(now) };
+  if (period === 'last_month') { const s = new Date(now.getFullYear(), now.getMonth()-1, 1); const e = new Date(now.getFullYear(), now.getMonth(), 0); return { from: fmt(s), to: fmt(e) }; }
+  return { from: fmt(now), to: fmt(now) };
 }
 
 async function getStores(store_id) {
@@ -25,79 +24,63 @@ async function getStores(store_id) {
   return r;
 }
 
+async function getFinancialModel() {
+  const [[row]] = await db.query('SELECT * FROM financial_model LIMIT 1').catch(() => [[null]]);
+  return {
+    breakeven_roas: parseFloat(row?.breakeven_roas || 1.5),
+    target_margin_rsd: parseFloat(row?.target_margin_rsd || 700),
+    max_cpa_rsd: parseFloat(row?.max_cpa_rsd || 500),
+    packaging_cost: parseFloat(row?.packaging_cost || 177)
+  };
+}
+
+function grossPackaging(value, vatIncluded) {
+  const num = parseFloat(value || 0);
+  return vatIncluded ? num : (num * 1.2);
+}
+
 exports.getSummary = async (req, res) => {
   const { store_id, period = '30d' } = req.query;
   const { from, to } = getDateRange(period);
 
   try {
     const stores = await getStores(store_id);
-    let revenue = 0, totalCOGS = 0, totalShipping = 0, totalPackaging = 0, orders = 0, refundAmount = 0;
+    const storeIds = stores.map(s => s.id);
+    if (!storeIds.length) return res.json({ revenue: 0, profit: 0, margin: 0, roas: null, orders: 0, costs: { ad_spend: 0, cogs: 0, shipping: 0, packaging: 0, refunds: 0, total: 0 } });
 
-    // Default model iz settings
-    const [[model]] = await db.query('SELECT * FROM financial_model LIMIT 1').catch(() => [[null]]);
-    const defaultPackaging = model?.packaging_cost || 177;
-    const bexPrice = await getBexPrice();
+    const placeholders = storeIds.map(() => '?').join(',');
 
-    for (const store of stores) {
-      const token = await getShopifyToken(store);
-      if (!token) continue;
+    const [[ordersRow]] = await db.query(
+      `SELECT COUNT(*) orders, COALESCE(SUM(total_price),0) revenue
+       FROM orders
+       WHERE store_id IN (${placeholders}) AND DATE(created_at) BETWEEN ? AND ? AND (financial_status IS NULL OR financial_status NOT IN ('refunded','voided'))`,
+      [...storeIds, from, to]
+    ).catch(() => [[{ orders: 0, revenue: 0 }]]);
 
-      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2025-01/orders.json`, {
-        headers: { 'X-Shopify-Access-Token': token },
-        params: {
-          status: 'any',
-          created_at_min: from,
-          created_at_max: to,
-          limit: 250,
-          fields: 'id,total_price,line_items,financial_status,refunds'
-        }
-      });
-
-      for (const o of (resp.data.orders || [])) {
-        const price = parseFloat(o.total_price || 0);
-        revenue += price;
-        orders++;
-        totalPackaging += defaultPackaging;
-        totalShipping  += bexPrice;
-
-        // COGS po proizvodu
-        for (const item of (o.line_items || [])) {
-          const [[pc]] = await db.query(
-            'SELECT cost_rsd FROM product_costs WHERE shopify_product_id=? ORDER BY valid_from DESC LIMIT 1',
-            [String(item.product_id)]
-          ).catch(() => [[null]]);
-          if (pc) totalCOGS += (pc.cost_rsd || 0) * item.quantity;
-        }
-
-        // Refundi
-        if (o.financial_status === 'refunded') {
-          refundAmount += price;
-        }
-      }
-    }
-
-    // Meta spend
     const [[spendRow]] = await db.query(
-      `SELECT COALESCE(SUM(spend), 0) as spend FROM meta_spend WHERE store_id IN (${stores.map(() => '?').join(',')}) AND date BETWEEN ? AND DATE(?)`,
-      [...stores.map(s => s.id), from.substring(0, 10), to.substring(0, 10)]
+      `SELECT COALESCE(SUM(spend),0) spend FROM meta_spend WHERE store_id IN (${placeholders}) AND date BETWEEN ? AND ?`,
+      [...storeIds, from, to]
     ).catch(() => [[{ spend: 0 }]]);
 
-    const adSpend = parseFloat(spendRow?.spend || 0);
-    const totalCosts = totalCOGS + totalShipping + totalPackaging + adSpend + refundAmount;
-    const profit = revenue - totalCosts;
+    const [[refundRow]] = await db.query(
+      `SELECT COALESCE(SUM(total_price),0) refunded FROM orders WHERE store_id IN (${placeholders}) AND DATE(created_at) BETWEEN ? AND ? AND financial_status IN ('refunded','voided')`,
+      [...storeIds, from, to]
+    ).catch(() => [[{ refunded: 0 }]]);
+
+    const revenue = parseFloat(ordersRow.revenue || 0);
+    const adSpend = parseFloat(spendRow.spend || 0);
+    const refundAmount = parseFloat(refundRow.refunded || 0);
+    const profit = revenue - adSpend - refundAmount;
     const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-    const roas   = adSpend > 0 ? revenue / adSpend : null;
+    const roas = adSpend > 0 ? revenue / adSpend : null;
 
     res.json({
-      revenue, profit, margin, roas, orders,
-      costs: {
-        ad_spend:   adSpend,
-        cogs:       totalCOGS,
-        shipping:   totalShipping,
-        packaging:  totalPackaging,
-        refunds:    refundAmount,
-        total:      totalCosts
-      }
+      revenue,
+      profit,
+      margin,
+      roas,
+      orders: parseInt(ordersRow.orders || 0, 10),
+      costs: { ad_spend: adSpend, cogs: 0, shipping: 0, packaging: 0, refunds: refundAmount, total: adSpend + refundAmount }
     });
   } catch (err) {
     console.error('getSummary error:', err.message);
@@ -111,62 +94,224 @@ exports.getProductsFinancials = async (req, res) => {
 
   try {
     const stores = await getStores(store_id);
-    const productMap = {};
+    const storeIds = stores.map(s => s.id);
+    const model = await getFinancialModel();
+    if (!storeIds.length) return res.json({ products: [], defaults: model, vat_rate: 20 });
 
-    for (const store of stores) {
-      const token = await getShopifyToken(store);
-      if (!token) continue;
+    const placeholders = storeIds.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT
+        p.id,
+        p.store_id,
+        p.shopify_product_id,
+        p.sku,
+        p.name,
+        p.shopify_price,
+        p.purchase_price,
+        p.purchase_price_vat,
+        p.packaging_cost,
+        p.packaging_vat,
+        p.other_costs,
+        p.max_cpa,
+        p.target_margin,
+        p.status,
+        COALESCE(SUM(oi.quantity),0) qty,
+        COALESCE(SUM(oi.quantity * oi.price),0) revenue,
+        MAX(pc.cost_rsd) latest_cost_rsd
+      FROM products p
+      LEFT JOIN order_items oi ON oi.product_id = p.id
+      LEFT JOIN orders o ON o.id = oi.order_id
+        AND o.store_id = p.store_id
+        AND DATE(o.created_at) BETWEEN ? AND ?
+        AND (o.financial_status IS NULL OR o.financial_status NOT IN ('refunded','voided'))
+      LEFT JOIN product_costs pc ON pc.shopify_product_id = p.shopify_product_id
+      WHERE p.store_id IN (${placeholders})
+      GROUP BY p.id
+      ORDER BY revenue DESC, p.name ASC`,
+      [from, to, ...storeIds]
+    ).catch(() => [[]]);
 
-      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2025-01/orders.json`, {
-        headers: { 'X-Shopify-Access-Token': token },
-        params: { status: 'any', created_at_min: from, created_at_max: to, limit: 250, fields: 'id,line_items,financial_status' }
-      });
+    const [priceHistoryRows] = await db.query(
+      `SELECT h.product_id, h.price, h.recorded_at
+       FROM product_price_history h
+       INNER JOIN (
+         SELECT product_id, MAX(recorded_at) AS latest_at
+         FROM product_price_history
+         WHERE store_id IN (${placeholders})
+         GROUP BY product_id
+       ) x ON x.product_id = h.product_id AND x.latest_at = h.recorded_at`,
+      [...storeIds]
+    ).catch(() => [[]]);
 
-      for (const o of (resp.data.orders || [])) {
-        if (o.financial_status === 'refunded') continue;
-        for (const item of (o.line_items || [])) {
-          const pid = String(item.product_id);
-          if (!productMap[pid]) {
-            productMap[pid] = { product_id: pid, title: item.title, qty: 0, revenue: 0, cost_rsd: null };
-          }
-          productMap[pid].qty     += item.quantity;
-          productMap[pid].revenue += parseFloat(item.price || 0) * item.quantity;
-        }
-      }
-    }
+    const latestHistoryPrice = {};
+    for (const row of priceHistoryRows) latestHistoryPrice[row.product_id] = parseFloat(row.price || 0);
 
-    // Dodaj troškove
-    for (const pid of Object.keys(productMap)) {
-      const [[pc]] = await db.query(
-        'SELECT cost_rsd FROM product_costs WHERE shopify_product_id=? ORDER BY valid_from DESC LIMIT 1', [pid]
-      ).catch(() => [[null]]);
-      if (pc) productMap[pid].cost_rsd = pc.cost_rsd;
-    }
+    const products = rows.map(row => {
+      const purchase = parseFloat(row.purchase_price ?? row.latest_cost_rsd ?? 0);
+      const packaging = parseFloat(row.packaging_cost ?? model.packaging_cost);
+      const other = parseFloat(row.other_costs ?? 0);
+      const maxCpa = parseFloat(row.max_cpa ?? model.max_cpa_rsd);
+      const targetMargin = parseFloat(row.target_margin ?? model.target_margin_rsd);
+      const packagingGross = grossPackaging(packaging, Number(row.packaging_vat || 0));
+      const cogsUnit = purchase + packagingGross + other;
+      const qty = parseFloat(row.qty || 0);
+      const revenue = parseFloat(row.revenue || 0);
+      const recommendedPrice = purchase + packagingGross + other + maxCpa + targetMargin;
+      const spendEstimate = 0;
+      const profitEstimate = revenue - (cogsUnit * qty) - spendEstimate;
+      const marginPercent = revenue > 0 ? (profitEstimate / revenue) * 100 : null;
+      const shopifyPrice = parseFloat(row.shopify_price ?? latestHistoryPrice[row.id] ?? 0);
+      return {
+        product_id: row.id,
+        store_id: row.store_id,
+        shopify_product_id: row.shopify_product_id,
+        sku: row.sku,
+        title: row.name,
+        qty,
+        revenue,
+        shopify_price: shopifyPrice,
+        cost_rsd: purchase,
+        purchase_vat_included: Number(row.purchase_price_vat ?? 1),
+        packaging_cost_rsd: packaging,
+        packaging_vat_included: Number(row.packaging_vat ?? 0),
+        extra_cost_rsd: other,
+        target_cpa_rsd: maxCpa,
+        margin_rsd: targetMargin,
+        recommended_price: recommendedPrice,
+        cogs_unit: cogsUnit,
+        cogs_total: cogsUnit * qty,
+        ad_spend: spendEstimate,
+        roas: null,
+        profit: profitEstimate,
+        margin_percent: marginPercent,
+        status: row.status || 'active'
+      };
+    });
 
-    const products = Object.values(productMap).sort((a, b) => b.revenue - a.revenue);
-    res.json({ products });
+    res.json({ products, defaults: model, vat_rate: 20 });
   } catch (err) {
+    console.error('getProductsFinancials error:', err.message);
     res.status(500).json({ error: 'Greška.' });
   }
 };
 
 exports.saveProductCost = async (req, res) => {
-  const { shopify_product_id, title, cost_rsd, valid_from } = req.body;
+  const {
+    shopify_product_id, product_id, title, cost_rsd,
+    packaging_cost_rsd, extra_cost_rsd, target_cpa_rsd,
+    margin_rsd, purchase_vat_included, packaging_vat_included, valid_from
+  } = req.body;
+
   try {
+    const [[product]] = await db.query('SELECT * FROM products WHERE id=? OR shopify_product_id=? LIMIT 1', [product_id || 0, shopify_product_id || '']);
+    if (!product) return res.status(404).json({ error: 'Proizvod nije pronađen.' });
+
     await db.query(
-      'INSERT INTO product_costs (shopify_product_id, title, cost_rsd, valid_from) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE cost_rsd=?, valid_from=?',
-      [shopify_product_id, title, cost_rsd, valid_from || new Date(), cost_rsd, valid_from || new Date()]
+      `UPDATE products SET
+        purchase_price=?,
+        purchase_price_vat=?,
+        packaging_cost=?,
+        packaging_vat=?,
+        other_costs=?,
+        max_cpa=?,
+        target_margin=?
+      WHERE id=?`,
+      [
+        parseFloat(cost_rsd || 0),
+        purchase_vat_included ? 1 : 0,
+        parseFloat(packaging_cost_rsd || 0),
+        packaging_vat_included ? 1 : 0,
+        parseFloat(extra_cost_rsd || 0),
+        parseFloat(target_cpa_rsd || 0),
+        parseFloat(margin_rsd || 0),
+        product.id
+      ]
     );
+
+    await db.query(
+      'INSERT INTO product_costs (shopify_product_id, title, cost_rsd, valid_from) VALUES (?,?,?,?)',
+      [product.shopify_product_id, title || product.name, parseFloat(cost_rsd || 0), valid_from || new Date()]
+    ).catch(() => {});
+
+    await db.query(
+      'INSERT INTO product_purchase_history (product_id, store_id, purchase_price, note, recorded_at) VALUES (?,?,?,?,?)',
+      [product.id, product.store_id, parseFloat(cost_rsd || 0), 'Izmena iz Proizvodi', (valid_from || new Date()).toString().slice(0,10)]
+    ).catch(() => {});
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('saveProductCost error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getProductCostHistory = async (req, res) => {
+  const { store_id } = req.query;
+  try {
+    const stores = await getStores(store_id);
+    const storeIds = stores.map(s => s.id);
+    if (!storeIds.length) return res.json({ items: [] });
+    const placeholders = storeIds.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT h.id, h.product_id, p.shopify_product_id, p.name AS title, h.purchase_price AS cost_rsd, h.note, h.recorded_at AS valid_from, h.created_at
+       FROM product_purchase_history h
+       INNER JOIN products p ON p.id = h.product_id
+       WHERE h.store_id IN (${placeholders})
+       ORDER BY p.name ASC, h.recorded_at DESC, h.id DESC`,
+      storeIds
+    ).catch(() => [[]]);
+    res.json({ items: rows });
+  } catch (err) {
+    console.error('getProductCostHistory error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.deleteProductCostHistory = async (req, res) => {
+  try {
+    await db.query('DELETE FROM product_purchase_history WHERE id=?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-async function getBexPrice() {
-  const [[row]] = await db.query(
-    'SELECT price_no_vat FROM bex_prices ORDER BY valid_from DESC LIMIT 1'
-  ).catch(() => [[null]]);
-  if (!row) return 250; // default
-  return parseFloat(row.price_no_vat) * 1.2; // sa PDV
-}
+exports.getProductSalesHistory = async (req, res) => {
+  const { store_id } = req.query;
+  try {
+    const stores = await getStores(store_id);
+    const storeIds = stores.map(s => s.id);
+    if (!storeIds.length) return res.json({ items: [] });
+    const placeholders = storeIds.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT h.id, h.product_id, p.name AS title, h.price AS price_rsd, h.recorded_at AS captured_at, p.shopify_product_id
+       FROM product_price_history h
+       INNER JOIN products p ON p.id = h.product_id
+       WHERE h.store_id IN (${placeholders})
+       ORDER BY p.name ASC, h.recorded_at DESC, h.id DESC`,
+      storeIds
+    ).catch(() => [[]]);
+
+    const grouped = {};
+    for (const row of rows) {
+      const pid = String(row.product_id);
+      grouped[pid] ||= { product_id: pid, title: row.title, shopify_product_id: row.shopify_product_id, history: [] };
+      grouped[pid].history.push(row);
+    }
+
+    const items = Object.values(grouped).map(group => {
+      const history = group.history.sort((a, b) => new Date(b.captured_at) - new Date(a.captured_at));
+      const latest = history[0] || null;
+      const previous = history[1] || null;
+      const change_percent = latest && previous && Number(previous.price_rsd) !== 0
+        ? ((Number(latest.price_rsd) - Number(previous.price_rsd)) / Number(previous.price_rsd)) * 100
+        : null;
+      return { ...group, latest, previous, change_percent };
+    });
+
+    res.json({ items });
+  } catch (err) {
+    console.error('getProductSalesHistory error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

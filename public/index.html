@@ -150,25 +150,138 @@
 
     <!-- ISTORIJA AKCIJA -->
     <div class="page" id="page-akcije"><div class="empty-state"><h3>Istorija akcija</h3><p>U izradi...</p></div></div>
-
     <!-- PROIZVODI -->
     <div class="page" id="page-proizvodi">
-      <div class="period-bar">
+      <div class="period-bar proizvodi-toolbar">
         <select class="period-select" id="proizvodiPeriod">
           <option value="today">Danas</option><option value="yesterday">Juče</option>
           <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
           <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
         </select>
+        <button class="btn btn-secondary" id="proizvodiRefreshBtn">Osveži</button>
       </div>
-      <div class="card">
-        <div style="font-size:14px;font-weight:700;margin-bottom:16px">📦 Prodaja po proizvodima</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>#</th><th>Proizvod</th><th>Kom</th><th>Prihod</th><th>COGS ukupno</th><th>Akcija</th></tr></thead>
-            <tbody id="proizvodiTbody">
-              <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
-            </tbody>
-          </table>
+
+      <div class="proizvodi-tabs">
+        <button class="proizvodi-tab active" data-proizvodi-tab="lista">Lista</button>
+        <button class="proizvodi-tab" data-proizvodi-tab="troskovi">Troškovi</button>
+        <button class="proizvodi-tab" data-proizvodi-tab="nabavne">Istorija nabavnih cena</button>
+        <button class="proizvodi-tab" data-proizvodi-tab="prodajne">Istorija prodajnih cena</button>
+      </div>
+
+      <div class="proizvodi-pane active" id="proizvodi-pane-lista">
+        <div class="kpi-grid" id="proizvodiStats"></div>
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Lista proizvoda</div>
+              <div class="section-subtitle">Pregled prodaje, troškova i profitabilnosti po proizvodu</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>Proizvod</th><th>Kom</th><th>Shopify cena</th><th>Nabavna + PDV</th><th>Pakovanje</th><th>Ukupni troškovi</th><th>Spend</th><th>Prihod</th><th>ROAS</th><th>Marža</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="proizvodiListaTbody">
+                <tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="proizvodi-pane" id="proizvodi-pane-troskovi">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Troškovi i preporučena cena</div>
+              <div class="section-subtitle">Inline pregled svih ulaznih troškova i formule za preporuku</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Proizvod</th><th>Nabavna</th><th>PDV nabavna</th><th>Pakovanje</th><th>PDV pakovanje</th><th>Ostalo</th><th>Max CPA</th><th>Marža</th><th>Preporučena cena</th><th>Akcija</th>
+                </tr>
+              </thead>
+              <tbody id="proizvodiTroskoviTbody">
+                <tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">Učitavam...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="proizvodi-pane" id="proizvodi-pane-nabavne">
+        <div id="proizvodiCostHistory" class="history-grid"></div>
+      </div>
+
+      <div class="proizvodi-pane" id="proizvodi-pane-prodajne">
+        <div id="proizvodiSalesHistory" class="history-grid"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="productCostModal" style="display:none;">
+      <div class="modal-card proizvodi-modal">
+        <div class="modal-head">
+          <div>
+            <div class="section-title" id="productCostModalTitle">Troškovi proizvoda</div>
+            <div class="section-subtitle">Podešavanje aktivnih troškova i preporučene cene</div>
+          </div>
+          <button class="modal-close" id="productCostModalClose">✕</button>
+        </div>
+        <div class="row-2">
+          <div class="form-group">
+            <label class="form-label">Nabavna cena</label>
+            <input class="form-input" id="pc_purchase_price" type="number" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pakovanje</label>
+            <input class="form-input" id="pc_packaging_cost" type="number" step="0.01">
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="form-group">
+            <label class="form-label">Ostali troškovi</label>
+            <input class="form-input" id="pc_other_costs" type="number" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Max CPA</label>
+            <input class="form-input" id="pc_max_cpa" type="number" step="0.01">
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="form-group">
+            <label class="form-label">Ciljna marža</label>
+            <input class="form-input" id="pc_target_margin" type="number" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Datum važenja</label>
+            <input class="form-input" id="pc_valid_from" type="date">
+          </div>
+        </div>
+        <div class="row-2">
+          <label class="check-card"><input type="checkbox" id="pc_purchase_vat"> <span>Nabavna cena ima uključen PDV</span></label>
+          <label class="check-card"><input type="checkbox" id="pc_packaging_vat"> <span>Pakovanje ima uključen PDV</span></label>
+        </div>
+        <div class="proizvodi-summary-row">
+          <div class="proizvodi-mini-card"><div class="proizvodi-mini-label">Nabavna</div><div class="proizvodi-mini-value" id="pc_preview_purchase">0 RSD</div></div>
+          <div class="proizvodi-mini-card"><div class="proizvodi-mini-label">Pakovanje bruto</div><div class="proizvodi-mini-value" id="pc_preview_packaging">0 RSD</div></div>
+          <div class="proizvodi-mini-card"><div class="proizvodi-mini-label">Ukupni trošak</div><div class="proizvodi-mini-value" id="pc_preview_cogs">0 RSD</div></div>
+          <div class="proizvodi-mini-card"><div class="proizvodi-mini-label">Preporučena cena</div><div class="proizvodi-mini-value" id="pc_preview_recommended">0 RSD</div></div>
+        </div>
+        <div class="proizvodi-note">
+          Formula:
+          <span class="proizvodi-formula">
+            <code>Nabavna</code> + <code>Pakovanje</code> + <code>Ostalo</code> + <code>Max CPA</code> + <code>Marža</code>
+          </span>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="productCostModalCancel">Otkaži</button>
+          <button class="btn btn-primary" id="productCostModalSave">Sačuvaj</button>
         </div>
       </div>
     </div>
