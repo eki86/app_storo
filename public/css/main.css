@@ -680,3 +680,41 @@ tr:hover td { background: var(--bg3); }
   .modal-card { padding:16px; }
   .modal-actions { flex-direction:column-reverse; }
 }
+
+
+.period-pills {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.period-pill {
+  border:1px solid var(--border);
+  background:var(--bg2);
+  color:var(--text2);
+  border-radius:999px;
+  padding:10px 16px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .18s;
+}
+.period-pill:hover { border-color: var(--accent); color: var(--text); }
+.period-pill.active { background: var(--accent); color: #111827; border-color: var(--accent); }
+.custom-range {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.custom-date-input {
+  min-width: 150px;
+  max-width: 170px;
+}
+.custom-range-sep {
+  color:var(--text3);
+  font-weight:700;
+}
+@media (max-width: 900px) {
+  .proizvodi-toolbar { align-items:flex-start; }
+}

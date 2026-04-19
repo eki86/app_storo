@@ -2,15 +2,19 @@ const db = require('../config/db');
 const axios = require('axios');
 const { getShopifyToken } = require('./settingsController');
 
-function getDateRange(period) {
+function getDateRange(period, dateFrom, dateTo) {
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const day = now.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+
+  if (period === 'custom' && dateFrom && dateTo) return { from: dateFrom, to: dateTo };
   if (period === 'today') return { from: fmt(now), to: fmt(now) };
   if (period === 'yesterday') { const y = new Date(now); y.setDate(y.getDate()-1); return { from: fmt(y), to: fmt(y) }; }
-  if (period === '7d') { const s = new Date(now); s.setDate(s.getDate()-6); return { from: fmt(s), to: fmt(now) }; }
+  if (period === '7d' || period === 'week') { const s = new Date(now); s.setDate(now.getDate() + mondayOffset); return { from: fmt(s), to: fmt(now) }; }
   if (period === '30d') { const s = new Date(now); s.setDate(s.getDate()-29); return { from: fmt(s), to: fmt(now) }; }
-  if (period === 'mtd') return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmt(now) };
+  if (period === 'mtd' || period === 'month') return { from: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), to: fmt(now) };
   if (period === 'last_month') { const s = new Date(now.getFullYear(), now.getMonth()-1, 1); const e = new Date(now.getFullYear(), now.getMonth(), 0); return { from: fmt(s), to: fmt(e) }; }
   return { from: fmt(now), to: fmt(now) };
 }
@@ -39,9 +43,50 @@ function grossPackaging(value, vatIncluded) {
   return vatIncluded ? num : (num * 1.2);
 }
 
+async function syncProductsFromShopify(stores) {
+  for (const store of stores) {
+    try {
+      const token = await getShopifyToken(store);
+      if (!token || !store.shopify_url) continue;
+      const resp = await axios.get(`https://${store.shopify_url}/admin/api/2025-01/products.json`, {
+        headers: { 'X-Shopify-Access-Token': token },
+        params: { limit: 250, fields: 'id,title,status,variants' }
+      });
+
+      for (const product of (resp.data.products || [])) {
+        const variant = (product.variants || [])[0] || {};
+        const shopifyProductId = String(product.id);
+        const sku = variant.sku || null;
+        const price = variant.price != null ? parseFloat(variant.price) : null;
+
+        const [[existing]] = await db.query(
+          'SELECT id FROM products WHERE store_id=? AND shopify_product_id=? LIMIT 1',
+          [store.id, shopifyProductId]
+        ).catch(() => [[null]]);
+
+        if (existing) {
+          await db.query(
+            `UPDATE products SET sku=?, name=?, shopify_price=?, status=? WHERE id=?`,
+            [sku, product.title, price, product.status || 'active', existing.id]
+          ).catch(() => {});
+        } else {
+          await db.query(
+            `INSERT INTO products
+            (store_id, shopify_product_id, sku, name, shopify_price, purchase_price_vat, packaging_vat, other_costs, max_cpa, target_margin, status)
+            VALUES (?,?,?,?,?,?,?, ?,?,?,?)`,
+            [store.id, shopifyProductId, sku, product.title, price, 1, 0, 0, 500, 700, product.status || 'active']
+          ).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.error('syncProductsFromShopify error:', store.id, e.response?.data || e.message);
+    }
+  }
+}
+
 exports.getSummary = async (req, res) => {
-  const { store_id, period = '30d' } = req.query;
-  const { from, to } = getDateRange(period);
+  const { store_id, period = '30d', date_from, date_to } = req.query;
+  const { from, to } = getDateRange(period, date_from, date_to);
 
   try {
     const stores = await getStores(store_id);
@@ -89,14 +134,16 @@ exports.getSummary = async (req, res) => {
 };
 
 exports.getProductsFinancials = async (req, res) => {
-  const { store_id, period = '30d' } = req.query;
-  const { from, to } = getDateRange(period);
+  const { store_id, period = '30d', date_from, date_to } = req.query;
+  const { from, to } = getDateRange(period, date_from, date_to);
 
   try {
     const stores = await getStores(store_id);
     const storeIds = stores.map(s => s.id);
     const model = await getFinancialModel();
-    if (!storeIds.length) return res.json({ products: [], defaults: model, vat_rate: 20 });
+    if (!storeIds.length) return res.json({ products: [], defaults: model, vat_rate: 20, range: { from, to } });
+
+    await syncProductsFromShopify(stores);
 
     const placeholders = storeIds.map(() => '?').join(',');
     const [rows] = await db.query(
@@ -115,8 +162,8 @@ exports.getProductsFinancials = async (req, res) => {
         p.max_cpa,
         p.target_margin,
         p.status,
-        COALESCE(SUM(oi.quantity),0) qty,
-        COALESCE(SUM(oi.quantity * oi.price),0) revenue,
+        COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END),0) qty,
+        COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity * oi.price ELSE 0 END),0) revenue,
         MAX(pc.cost_rsd) latest_cost_rsd
       FROM products p
       LEFT JOIN order_items oi ON oi.product_id = p.id
@@ -127,24 +174,9 @@ exports.getProductsFinancials = async (req, res) => {
       LEFT JOIN product_costs pc ON pc.shopify_product_id = p.shopify_product_id
       WHERE p.store_id IN (${placeholders})
       GROUP BY p.id
-      ORDER BY revenue DESC, p.name ASC`,
+      ORDER BY p.name ASC`,
       [from, to, ...storeIds]
     ).catch(() => [[]]);
-
-    const [priceHistoryRows] = await db.query(
-      `SELECT h.product_id, h.price, h.recorded_at
-       FROM product_price_history h
-       INNER JOIN (
-         SELECT product_id, MAX(recorded_at) AS latest_at
-         FROM product_price_history
-         WHERE store_id IN (${placeholders})
-         GROUP BY product_id
-       ) x ON x.product_id = h.product_id AND x.latest_at = h.recorded_at`,
-      [...storeIds]
-    ).catch(() => [[]]);
-
-    const latestHistoryPrice = {};
-    for (const row of priceHistoryRows) latestHistoryPrice[row.product_id] = parseFloat(row.price || 0);
 
     const products = rows.map(row => {
       const purchase = parseFloat(row.purchase_price ?? row.latest_cost_rsd ?? 0);
@@ -157,10 +189,9 @@ exports.getProductsFinancials = async (req, res) => {
       const qty = parseFloat(row.qty || 0);
       const revenue = parseFloat(row.revenue || 0);
       const recommendedPrice = purchase + packagingGross + other + maxCpa + targetMargin;
-      const spendEstimate = 0;
-      const profitEstimate = revenue - (cogsUnit * qty) - spendEstimate;
+      const profitEstimate = revenue - (cogsUnit * qty);
       const marginPercent = revenue > 0 ? (profitEstimate / revenue) * 100 : null;
-      const shopifyPrice = parseFloat(row.shopify_price ?? latestHistoryPrice[row.id] ?? 0);
+      const shopifyPrice = parseFloat(row.shopify_price ?? 0);
       return {
         product_id: row.id,
         store_id: row.store_id,
@@ -180,7 +211,7 @@ exports.getProductsFinancials = async (req, res) => {
         recommended_price: recommendedPrice,
         cogs_unit: cogsUnit,
         cogs_total: cogsUnit * qty,
-        ad_spend: spendEstimate,
+        ad_spend: null,
         roas: null,
         profit: profitEstimate,
         margin_percent: marginPercent,
@@ -188,7 +219,7 @@ exports.getProductsFinancials = async (req, res) => {
       };
     });
 
-    res.json({ products, defaults: model, vat_rate: 20 });
+    res.json({ products, defaults: model, vat_rate: 20, range: { from, to } });
   } catch (err) {
     console.error('getProductsFinancials error:', err.message);
     res.status(500).json({ error: 'Greška.' });
@@ -235,7 +266,7 @@ exports.saveProductCost = async (req, res) => {
 
     await db.query(
       'INSERT INTO product_purchase_history (product_id, store_id, purchase_price, note, recorded_at) VALUES (?,?,?,?,?)',
-      [product.id, product.store_id, parseFloat(cost_rsd || 0), 'Izmena iz Proizvodi', (valid_from || new Date()).toString().slice(0,10)]
+      [product.id, product.store_id, parseFloat(cost_rsd || 0), 'Izmena iz Proizvodi', valid_from || new Date().toISOString().slice(0, 10)]
     ).catch(() => {});
 
     res.json({ success: true });

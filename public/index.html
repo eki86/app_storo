@@ -153,11 +153,19 @@
     <!-- PROIZVODI -->
     <div class="page" id="page-proizvodi">
       <div class="period-bar proizvodi-toolbar">
-        <select class="period-select" id="proizvodiPeriod">
-          <option value="today">Danas</option><option value="yesterday">Juče</option>
-          <option value="7d">7 dana</option><option value="30d" selected>30 dana</option>
-          <option value="mtd">Ovaj mesec</option><option value="last_month">Prošli mesec</option>
-        </select>
+        <div class="period-pills" id="proizvodiPeriodPills">
+          <button class="period-pill active" data-period="today">Danas</button>
+          <button class="period-pill" data-period="yesterday">Juče</button>
+          <button class="period-pill" data-period="week">Nedelja</button>
+          <button class="period-pill" data-period="month">Mesec</button>
+          <button class="period-pill" data-period="custom">Od - Do</button>
+        </div>
+        <div class="custom-range" id="proizvodiCustomRange" style="display:none;">
+          <input class="form-input custom-date-input" type="date" id="proizvodiDateFrom">
+          <span class="custom-range-sep">—</span>
+          <input class="form-input custom-date-input" type="date" id="proizvodiDateTo">
+          <button class="btn btn-secondary btn-sm" id="proizvodiApplyCustom">Primeni</button>
+        </div>
         <button class="btn btn-secondary" id="proizvodiRefreshBtn">Osveži</button>
       </div>
 

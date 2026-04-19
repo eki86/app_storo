@@ -1,4 +1,4 @@
-window.proizvodiState = { products: [], activeTab: 'lista', editingProduct: null };
+window.proizvodiState = { products: [], activeTab: 'lista', editingProduct: null, period: 'today', dateFrom: '', dateTo: '' };
 
 function esc(str = '') {
   return String(str)
@@ -41,25 +41,42 @@ function statusBadge(status) {
   return `<span class="badge ${map[status] || 'badge-gray'}">${esc(status || 'n/a')}</span>`;
 }
 
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function getProizvodiParams() {
   const storeId = window.currentStoreId || 'all';
-  const period = document.getElementById('proizvodiPeriod')?.value || '30d';
-  return { storeId, period };
+  return {
+    storeId,
+    period: window.proizvodiState.period || 'today',
+    dateFrom: window.proizvodiState.dateFrom || '',
+    dateTo: window.proizvodiState.dateTo || ''
+  };
+}
+
+function buildProductsQuery() {
+  const { storeId, period, dateFrom, dateTo } = getProizvodiParams();
+  const params = new URLSearchParams({ store_id: storeId, period });
+  if (period === 'custom' && dateFrom && dateTo) {
+    params.set('date_from', dateFrom);
+    params.set('date_to', dateTo);
+  }
+  return params.toString();
 }
 
 function renderProizvodiStats(products) {
   const wrap = document.getElementById('proizvodiStats');
   if (!wrap) return;
   const revenue = products.reduce((s, p) => s + Number(p.revenue || 0), 0);
-  const spend = products.reduce((s, p) => s + Number(p.ad_spend || 0), 0);
   const profit = products.reduce((s, p) => s + Number(p.profit || 0), 0);
   const qty = products.reduce((s, p) => s + Number(p.qty || 0), 0);
   wrap.innerHTML = `
     <div class="kpi-card"><div class="kpi-label">Proizvoda</div><div class="kpi-value">${fmtCount(products.length)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Prodato komada</div><div class="kpi-value">${fmtCount(qty)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Prihod</div><div class="kpi-value">${fmtRSD(revenue)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Ad Spend</div><div class="kpi-value">${fmtRSD(spend)}</div><div class="kpi-sub">Čeka SKU mapping</div></div>
-    <div class="kpi-card"><div class="kpi-label">Profit</div><div class="kpi-value">${fmtRSD(profit)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Profit bez Meta spenda</div><div class="kpi-value">${fmtRSD(profit)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Filter</div><div class="kpi-value">${window.proizvodiState.period === 'custom' ? 'Od - Do' : (window.proizvodiState.period === 'week' ? 'Nedelja' : window.proizvodiState.period === 'month' ? 'Mesec' : window.proizvodiState.period === 'yesterday' ? 'Juče' : 'Danas')}</div></div>
   `;
 }
 
@@ -67,7 +84,7 @@ function renderProizvodiLista(products) {
   const tbody = document.getElementById('proizvodiListaTbody');
   if (!tbody) return;
   if (!products.length) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text3)">Nema podataka.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--text3)">Nema proizvoda. Proveri Shopify konekciju ili osveži stranicu.</td></tr>`;
     return;
   }
 
@@ -194,9 +211,8 @@ function renderSalesHistory(items) {
 }
 
 window.loadProizvodi = async function(forceHistory = false) {
-  const { storeId, period } = getProizvodiParams();
   try {
-    const res = await fetch(`/api/finansije/products?store_id=${storeId}&period=${period}`);
+    const res = await fetch(`/api/finansije/products?${buildProductsQuery()}`);
     const data = await res.json();
     window.proizvodiState.products = data.products || [];
     renderProizvodiStats(window.proizvodiState.products);
@@ -257,7 +273,7 @@ function openProductCostModal(product) {
   modalEl('pc_target_margin').value = Number(product.margin_rsd || 0);
   modalEl('pc_purchase_vat').checked = !!Number(product.purchase_vat_included || 0);
   modalEl('pc_packaging_vat').checked = !!Number(product.packaging_vat_included || 0);
-  modalEl('pc_valid_from').value = new Date().toISOString().slice(0, 10);
+  modalEl('pc_valid_from').value = getTodayStr();
   updateProductCostPreview();
   modalEl('productCostModal').style.display = 'flex';
 }
@@ -311,10 +327,30 @@ function activateProizvodiTab(tab) {
   if (tab === 'prodajne') loadProductSalesHistory();
 }
 
+function activatePeriod(period) {
+  window.proizvodiState.period = period;
+  document.querySelectorAll('.period-pill').forEach(btn => btn.classList.toggle('active', btn.dataset.period === period));
+  const custom = document.getElementById('proizvodiCustomRange');
+  if (custom) custom.style.display = period === 'custom' ? 'flex' : 'none';
+  if (period !== 'custom') window.loadProizvodi();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('proizvodiPeriod')?.addEventListener('change', () => window.loadProizvodi());
+  document.getElementById('proizvodiDateFrom').value = getTodayStr();
+  document.getElementById('proizvodiDateTo').value = getTodayStr();
+  window.proizvodiState.dateFrom = getTodayStr();
+  window.proizvodiState.dateTo = getTodayStr();
+
   document.getElementById('proizvodiRefreshBtn')?.addEventListener('click', () => window.loadProizvodi(true));
   document.querySelectorAll('.proizvodi-tab').forEach(btn => btn.addEventListener('click', () => activateProizvodiTab(btn.dataset.proizvodiTab)));
+  document.querySelectorAll('.period-pill').forEach(btn => btn.addEventListener('click', () => activatePeriod(btn.dataset.period)));
+  document.getElementById('proizvodiDateFrom')?.addEventListener('change', e => window.proizvodiState.dateFrom = e.target.value);
+  document.getElementById('proizvodiDateTo')?.addEventListener('change', e => window.proizvodiState.dateTo = e.target.value);
+  document.getElementById('proizvodiApplyCustom')?.addEventListener('click', () => {
+    if (!window.proizvodiState.dateFrom || !window.proizvodiState.dateTo) return showToast('Izaberi oba datuma', 'error');
+    if (window.proizvodiState.dateFrom > window.proizvodiState.dateTo) return showToast('OD datum ne može biti posle DO datuma', 'error');
+    window.loadProizvodi();
+  });
 
   ['pc_purchase_price','pc_packaging_cost','pc_other_costs','pc_max_cpa','pc_target_margin','pc_purchase_vat','pc_packaging_vat'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', updateProductCostPreview);
@@ -338,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
       margin_rsd: modalNumber('pc_target_margin'),
       purchase_vat_included: modalEl('pc_purchase_vat').checked,
       packaging_vat_included: modalEl('pc_packaging_vat').checked,
-      valid_from: modalEl('pc_valid_from').value || new Date().toISOString().slice(0, 10)
+      valid_from: modalEl('pc_valid_from').value || getTodayStr()
     });
   });
 
